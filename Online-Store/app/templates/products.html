@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Товары - TechTown{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Сайдбар с фильтрами -->
+    <div class="col-md-3">
+        <div class="card sidebar">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter"></i> Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form id="filterForm" method="get" action="/products/">
+                    <!-- Поиск -->
+                    <div class="mb-3">
+                        <label for="search" class="form-label">Поиск</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ current_search }}" 
+                               placeholder="Название товара...">
+                    </div>
+                    
+                    <!-- Категория -->
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Категория</label>
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="">Все категории</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" 
+                                    {{ 'selected' if current_category_id|string == category.id|string }}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Цена -->
+                    <div class="mb-3">
+                        <label class="form-label">Цена</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control" name="min_price" 
+                                       value="{{ current_min_price }}" 
+                                       placeholder="От" min="0" step="0.01">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" name="max_price" 
+                                       value="{{ current_max_price }}" 
+                                       placeholder="До" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Сортировка -->
+                    <div class="mb-3">
+                        <label for="sort_by" class="form-label">Сортировка</label>
+                        <select class="form-select" id="sort_by" name="sort_by">
+                            <option value="">По умолчанию</option>
+                            <option value="name" {{ 'selected' if current_sort_by == 'name' }}>По названию</option>
+                            <option value="price_asc" {{ 'selected' if current_sort_by == 'price_asc' }}>По цене (возр.)</option>
+                            <option value="price_desc" {{ 'selected' if current_sort_by == 'price_desc' }}>По цене (убыв.)</option>
+                            <option value="popularity" {{ 'selected' if current_sort_by == 'popularity' }}>По популярности</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Применить
+                    </button>
+                    <a href="/products/" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="fas fa-times"></i> Сбросить
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список товаров -->
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Каталог товаров</h2>
+            <div class="text-muted">
+                Найдено товаров: <strong>{{ products|length }}</strong>
+            </div>
+        </div>
+        <div class="product-rating mb-2">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="text-warning">
+            {% set product_reviews = [] %}
+            {% for review in reviews if review.product_id == product.id %}
+                {% set _ = product_reviews.append(review) %}
+            {% endfor %}
+            
+            {% if product_reviews %}
+                {% set avg_rating = (product_reviews|sum(attribute='rating') / product_reviews|length)|round %}
+                {% for i in range(5) %}
+                    {% if i < avg_rating %}
+                        <i class="fas fa-star"></i>
+                    {% else %}
+                        <i class="far fa-star"></i>
+                    {% endif %}
+                {% endfor %}
+                <small class="text-muted ms-1">({{ product_reviews|length }})</small>
+            {% else %}
+                <span class="text-muted">Нет отзывов</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+        {% if products %}
+        <div class="row">
+            {% for product in products %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card product-card h-100">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" class="card-img-top product-image" alt="{{ product.name }}">
+                    {% else %}
+                    <div class="card-img-top product-image bg-light d-flex align-items-center justify-content-center">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text flex-grow-1">{{ product.description or 'Описание товара' }}</p>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h5 text-primary">{{ "%.2f"|format(product.price) }} ₽</span>
+                                <small class="text-muted">
+                                    {% if product.stock_quantity > 10 %}
+                                    <span class="text-success">В наличии</span>
+                                    {% elif product.stock_quantity > 0 %}
+                                    <span class="text-warning">Мало</span>
+                                    {% else %}
+                                    <span class="text-danger">Нет в наличии</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary flex-fill add-to-cart" 
+                                        data-product-id="{{ product.id }}"
+                                        data-product-name="{{ product.name }}"
+                                        data-product-price="{{ product.price }}"
+                                        {{ 'disabled' if product.stock_quantity == 0 }}>
+                                    <i class="fas fa-cart-plus"></i> В корзину
+                                </button>
+                                <button class="btn btn-outline-secondary" 
+                                        data-bs-toggle="tooltip" 
+                                        title="Быстрый просмотр">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- В карточке товара добавьте этот код после цены -->
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+            <h3>Товары не найдены</h3>
+            <p class="text-muted">Попробуйте изменить параметры фильтрации</p>
+            <a href="/products/" class="btn btn-primary">Сбросить фильтры</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление в корзину
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            const productPrice = this.dataset.productPrice;
+            
+            let cart = JSON.parse(localStorage.getItem('cart') || '{}');
+            cart[productId] = (cart[productId] || 0) + 1;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            
+            updateCartCount();
+            
+            // Показать уведомление
+            showNotification(`Товар "${productName}" добавлен в корзину!`, 'success');
+        });
+    });
+    
+    function showNotification(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 3000);
+    }
+    
+    // Инициализация тултипов
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

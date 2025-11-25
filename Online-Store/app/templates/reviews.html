@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if current_user.role == 'admin' %}Отзывы - Админ-панель
+    {% elif current_user.role == 'manager' %}Отзывы - Панель менеджера
+    {% elif current_user.role == 'seller' %}Отзывы - Панель продавца
+    {% else %}Отзывы покупателей - TechTown{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-center">
+                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                    <i class="fas fa-comments 
+                        {% if current_user.role == 'admin' %}text-danger
+                        {% elif current_user.role == 'manager' %}text-info
+                        {% elif current_user.role == 'seller' %}text-warning{% endif %} 
+                        me-2"></i>
+                    Отзывы покупателей
+                {% else %}
+                    <i class="fas fa-comments text-success me-2"></i>
+                    Что говорят наши клиенты
+                {% endif %}
+            </h1>
+            
+            <p class="text-center text-muted">
+                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                    Все отзывы о товарах магазина
+                {% else %}
+                    Честные отзывы реальных покупателей
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if reviews %}
+    <div class="row">
+        {% for review in reviews %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 
+                {% if current_user.role == 'admin' %}border-danger
+                {% elif current_user.role == 'manager' %}border-info
+                {% elif current_user.role == 'seller' %}border-warning
+                {% else %}border-success{% endif %}">
+                
+                <div class="card-header 
+                    {% if current_user.role == 'admin' %}bg-danger text-white
+                    {% elif current_user.role == 'manager' %}bg-info text-white
+                    {% elif current_user.role == 'seller' %}bg-warning
+                    {% else %}bg-success text-white{% endif %} 
+                    d-flex justify-content-between align-items-center">
+                    
+                    <div>
+                        <strong>{{ review.customer.name }}</strong>
+                        <br>
+                        <small>
+                            <i class="fas fa-box me-1"></i>
+                            {{ review.product.name }}
+                        </small>
+                    </div>
+                    <div class="text-warning">
+                        {% for i in range(5) %}
+                            {% if i < review.rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <h6 class="card-title">{{ review.title }}</h6>
+                    <p class="card-text">{{ review.comment }}</p>
+                </div>
+                
+                <div class="card-footer text-muted d-flex justify-content-between">
+                    <small>
+                        <i class="far fa-clock me-1"></i>
+                        {{ review.created_at.strftime('%d.%m.%Y в %H:%M') }}
+                    </small>
+                    {% if current_user.role in ['admin', 'manager'] %}
+                    <small>
+                        <i class="fas 
+                            {% if review.is_approved %}fa-check text-success
+                            {% else %}fa-clock text-warning{% endif %} 
+                            me-1"></i>
+                        {% if review.is_approved %}Одобрен
+                        {% else %}На модерации{% endif %}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert 
+                {% if current_user.role == 'admin' %}alert-danger
+                {% elif current_user.role == 'manager' %}alert-info
+                {% elif current_user.role == 'seller' %}alert-warning
+                {% else %}alert-info{% endif %} 
+                text-center">
+                
+                <h4>
+                    <i class="fas fa-comment-slash me-2"></i>
+                    Отзывов пока нет
+                </h4>
+                
+                {% if current_user and current_user.role == 'customer' %}
+                <p>Будьте первым, кто поделится своим мнением о наших товарах!</p>
+                <a href="/products/" class="btn 
+                    {% if current_user.role == 'admin' %}btn-danger
+                    {% elif current_user.role == 'manager' %}btn-info
+                    {% elif current_user.role == 'seller' %}btn-warning
+                    {% else %}btn-success{% endif %}">
+                    Перейти к товарам
+                </a>
+                {% elif current_user.role in ['admin', 'manager', 'seller'] %}
+                <p>Пользователи еще не оставили отзывы о товарах.</p>
+                {% else %}
+                <p><a href="/auth/login" class="alert-link">Войдите</a> чтобы увидеть отзывы других покупателей.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Навигация -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="/" class="btn 
+                {% if current_user.role == 'admin' %}btn-outline-danger
+                {% elif current_user.role == 'manager' %}btn-outline-info
+                {% elif current_user.role == 'seller' %}btn-outline-warning
+                {% else %}btn-outline-success{% endif %} 
+                me-2">
+                <i class="fas fa-home me-1"></i>
+                На главную
+            </a>
+            
+            <a href="/products/" class="btn 
+                {% if current_user.role == 'admin' %}btn-danger
+                {% elif current_user.role == 'manager' %}btn-info
+                {% elif current_user.role == 'seller' %}btn-warning
+                {% else %}btn-success{% endif %}">
+                <i class="fas fa-shopping-bag me-1"></i>
+                Перейти к покупкам
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

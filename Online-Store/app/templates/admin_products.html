@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Управление товарами - Админка{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Сайдбар -->
+        <div class="col-md-3 col-lg-2 bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Админ-панель</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/products">
+                            <i class="fas fa-box me-2"></i>
+                            Товары
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/categories">
+                            <i class="fas fa-tags me-2"></i>
+                            Категории
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/orders">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Заказы
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="col-md-9 col-lg-10 ms-sm-auto px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Управление товарами</h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <i class="fas fa-plus me-1"></i> Добавить товар
+                </button>
+            </div>
+
+            <!-- Список товаров -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Изображение</th>
+                            <th>Название</th>
+                            <th>Категория</th>
+                            <th>Цена</th>
+                            <th>Остаток</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.id }}</td>
+                            <td>
+                                {% if product.image_url %}
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>{{ product.name }}</td>
+                            <td>
+                                {% for category in categories %}
+                                    {% if category.id == product.category_id %}
+                                        {{ category.name }}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ product.price }} ₽</td>
+                            <td>
+                                <span class="badge {% if product.stock_quantity > 10 %}bg-success{% elif product.stock_quantity > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ product.stock_quantity }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="editProduct({{ product.id }}, '{{ product.name }}', '{{ product.description }}', {{ product.price }}, {{ product.category_id }}, {{ product.stock_quantity }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteProduct({{ product.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-box-open fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">Товары не найдены</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления товара -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить товар</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addProductForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Название товара *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="category_id" class="form-label">Категория *</label>
+                                <select class="form-select" id="category_id" name="category_id" required>
+                                    <option value="">Выберите категорию</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Цена *</label>
+                                <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="stock_quantity" class="form-label">Количество на складе</label>
+                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="image" class="form-label">Изображение товара</label>
+                                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                                <div class="form-text">Поддерживаемые форматы: JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div id="imagePreview" class="border rounded p-2 text-center" style="display: none;">
+                                    <img id="previewImg" style="max-width: 100%; max-height: 200px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить товар</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Предпросмотр изображения
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Добавление товара
+document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/admin/products', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Товар успешно добавлен!');
+            location.reload();
+        } else {
+            alert('Ошибка: ' + result.detail);
+        }
+    } catch (error) {
+        alert('Ошибка при добавлении товара: ' + error.message);
+    }
+});
+
+// Функции редактирования и удаления
+function editProduct(id, name, description, price, categoryId, stockQuantity) {
+    // Реализация редактирования
+    alert('Редактирование товара ID: ' + id);
+}
+
+function deleteProduct(id) {
+    if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+        fetch(`/admin/products/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message);
+            location.reload();
+        })
+        .catch(error => {
+            alert('Ошибка при удалении товара: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}

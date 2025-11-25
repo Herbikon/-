@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}Оформление заказа - TechTown{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4"><i class="fas fa-clipboard-check me-2"></i>Оформление заказа</h1>
+
+    <div class="row">
+        <!-- Форма заказа -->
+        <div class="col-lg-8">
+            <form id="checkout-form">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Контактная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">Имя *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required
+                                       value="{{ current_user.first_name or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Фамилия *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required
+                                       value="{{ current_user.last_name or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" required
+                                       value="{{ current_user.email or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Телефон *</label>
+                                <input type="text" class="form-control" id="phone" name="phone" required
+                                       placeholder="Любой формат номера">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Адрес доставки -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Адрес доставки</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Адрес доставки *</label>
+                            <textarea class="form-control" id="address" name="address" rows="2" required
+                                      placeholder="Любой адрес (город, улица, дом)"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="city" class="form-label">Город *</label>
+                            <input type="text" class="form-control" id="city" name="city" required
+                                   placeholder="Любой город">
+                        </div>
+                        <div class="mb-3">
+                            <label for="postal_code" class="form-label">Почтовый индекс (опционально)</label>
+                            <input type="text" class="form-control" id="postal_code" name="postal_code"
+                                   placeholder="Необязательное поле">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Способ оплаты -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Способ оплаты</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="demo_card" value="demo_card" checked required>
+                            <label class="form-check-label" for="demo_card">
+                                <i class="fas fa-credit-card me-2"></i>Демо-карта
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="demo_sbp" value="demo_sbp" required>
+                            <label class="form-check-label" for="demo_sbp">
+                                <i class="fas fa-mobile-alt me-2"></i>Демо-СБП
+                            </label>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Демо-режим:</strong> Реальные платежи не производятся. Это тестовая система.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Итоги заказа -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    <div id="order-items">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm text-warning" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <span class="ms-2">Загрузка товаров...</span>
+                        </div>
+                    </div>
+                    
+                    <div id="order-summary" class="mt-3">
+                        <!-- Итоги будут рассчитаны через JavaScript -->
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button id="submit-order" class="btn btn-primary btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Перейти к оплате
+                        </button>
+                        <a href="/cart/" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Вернуться в корзину
+                        </a>
+                    </div>
+
+                    <!-- Гарантии -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="mb-2"><i class="fas fa-shield-alt text-success me-2"></i>Ваши гарантии</h6>
+                        <div class="small">
+                            <div class="mb-1"><i class="fas fa-check text-success me-1"></i> Защита покупателя</div>
+                            <div class="mb-1"><i class="fas fa-check text-success me-1"></i> Гарантия возврата средств</div>
+                            <div><i class="fas fa-check text-success me-1"></i> Конфиденциальность данных</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderItemsContainer = document.getElementById('order-items');
+    const orderSummaryContainer = document.getElementById('order-summary');
+    const submitOrderBtn = document.getElementById('submit-order');
+    const checkoutForm = document.getElementById('checkout-form');
+
+    // Функция для загрузки корзины из localStorage
+    function loadCart() {
+        try {
+            return JSON.parse(localStorage.getItem('cart') || '{}');
+        } catch (e) {
+            console.error('Ошибка загрузки корзины:', e);
+            return {};
+        }
+    }
+
+    // Функция для получения информации о товарах из API
+    async function getProductInfo(productId) {
+        try {
+            const response = await fetch(`/api/products/${productId}`);
+            if (!response.ok) {
+                throw new Error('Товар не найден');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Ошибка загрузки товара:', error);
+            return null;
+        }
+    }
+
+    // Функция для отображения товаров в заказе
+    async function renderOrderItems() {
+        const cart = loadCart();
+        const productIds = Object.keys(cart);
+
+        if (productIds.length === 0) {
+            orderItemsContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Корзина пуста
+                </div>
+            `;
+            orderSummaryContainer.innerHTML = '';
+            submitOrderBtn.disabled = true;
+            return;
+        }
+
+        let total = 0;
+        let itemsHTML = '';
+
+        for (const productId of productIds) {
+            const product = await getProductInfo(productId);
+            if (product) {
+                const quantity = cart[productId];
+                const itemTotal = product.price * quantity;
+                total += itemTotal;
+
+                itemsHTML += `
+                    <div class="order-item border-bottom pb-2 mb-2">
+                        <div class="row align-items-center">
+                            <div class="col-3">
+                                <img src="${product.image_url || '/static/images/placeholder.png'}" 
+                                     alt="${product.name}" 
+                                     class="img-fluid rounded"
+                                     style="max-height: 50px; object-fit: cover;">
+                            </div>
+                            <div class="col-6">
+                                <h6 class="mb-0 small">${product.name}</h6>
+                                <small class="text-muted">${quantity} × ${product.price.toLocaleString()} ₽</small>
+                            </div>
+                            <div class="col-3 text-end">
+                                <strong class="text-success">${itemTotal.toLocaleString()} ₽</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        orderItemsContainer.innerHTML = itemsHTML;
+
+        // Расчет стоимости доставки
+        const deliveryCost = total >= 3000 ? 0 : 500;
+        const finalTotal = total + deliveryCost;
+
+        orderSummaryContainer.innerHTML = `
+            <div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Товары:</span>
+                    <span>${total.toLocaleString()} ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Доставка:</span>
+                    <span class="${deliveryCost === 0 ? 'text-success' : ''}">
+                        ${deliveryCost === 0 ? 'Бесплатно' : deliveryCost.toLocaleString() + ' ₽'}
+                    </span>
+                </div>
+                ${deliveryCost > 0 ? `
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Бесплатная доставка от 3 000 ₽
+                    </div>
+                ` : ''}
+                <hr>
+                <div class="d-flex justify-content-between fs-5">
+                    <strong>Итого:</strong>
+                    <strong class="text-success">${finalTotal.toLocaleString()} ₽</strong>
+                </div>
+            </div>
+        `;
+
+        submitOrderBtn.disabled = false;
+    }
+
+    // Упрощенная функция для проверки валидности формы
+    function validateForm() {
+        const requiredFields = [
+            'first_name', 
+            'last_name', 
+            'email', 
+            'phone', 
+            'address', 
+            'city'
+        ];
+        
+        let isValid = true;
+
+        requiredFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            if (!field.value.trim()) {
+                isValid = false;
+                // Простая подсветка поля
+                field.style.borderColor = '#dc3545';
+            } else {
+                field.style.borderColor = '';
+            }
+        });
+
+        return isValid;
+    }
+
+    // Сброс подсветки при вводе
+    const inputs = checkoutForm.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            this.style.borderColor = '';
+        });
+    });
+
+    // Обработчик отправки заказа
+    // Обработчик отправки заказа
+submitOrderBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    
+    const cart = loadCart();
+    if (Object.keys(cart).length === 0) {
+        showAlert('Корзина пуста', 'warning');
+        return;
+    }
+
+    // Простая валидация формы - только проверка на заполненность
+    if (!validateForm()) {
+        showAlert('Пожалуйста, заполните все обязательные поля', 'warning');
+        return;
+    }
+
+    // Собираем данные формы
+    const formData = new FormData(checkoutForm);
+    const orderData = {
+        first_name: formData.get('first_name').trim(),
+        last_name: formData.get('last_name').trim(),
+        email: formData.get('email').trim(),
+        phone: formData.get('phone').trim(),
+        address: formData.get('address').trim(),
+        city: formData.get('city').trim(),
+        postal_code: formData.get('postal_code').trim(),
+        payment_method: formData.get('payment_method')
+    };
+
+    // Показываем загрузку
+    submitOrderBtn.disabled = true;
+    submitOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Оформление заказа...';
+
+    try {
+        // Получаем информацию о товарах для создания платежа
+        const productIds = Object.keys(cart);
+        const items = [];
+        let totalAmount = 0;
+
+        for (const productId of productIds) {
+            const product = await getProductInfo(productId);
+            if (product) {
+                const quantity = cart[productId];
+                items.push({
+                    name: product.name,
+                    quantity: quantity,
+                    price: product.price,
+                    category: product.category || 'Электроника'
+                });
+                totalAmount += product.price * quantity;
+            }
+        }
+
+        // Добавляем стоимость доставки
+        const deliveryCost = totalAmount >= 3000 ? 0 : 500;
+        totalAmount += deliveryCost;
+
+        // Создаем платеж
+        const paymentData = {
+            order_id: Date.now(), // В реальной системе здесь должен быть ID заказа из БД
+            customer_email: orderData.email,
+            customer_phone: orderData.phone,
+            amount: totalAmount,
+            items: items,
+            description: `Заказ от ${orderData.first_name} ${orderData.last_name}`,
+            payment_method: orderData.payment_method
+        };
+
+        console.log("Sending payment data:", paymentData);
+
+        const response = await fetch('/payments/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(paymentData)
+        });
+
+        console.log("Response status:", response.status);
+        console.log("Response headers:", response.headers);
+
+        if (response.ok) {
+            const payment = await response.json();
+            console.log("Payment created:", payment);
+            
+            // Очищаем корзину после успешного заказа
+            localStorage.removeItem('cart');
+            updateCartCounter();
+            
+            // Перенаправляем на страницу успеха
+            window.location.href = payment.payment_url;
+        } else {
+            const errorText = await response.text();
+            console.error("Error response:", errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+    } catch (error) {
+        console.error('Ошибка оформления заказа:', error);
+        showAlert('Произошла ошибка при оформлении заказа: ' + error.message, 'danger');
+    } finally {
+        submitOrderBtn.disabled = false;
+        submitOrderBtn.innerHTML = '<i class="fas fa-credit-card me-2"></i>Перейти к оплате';
+    }
+});
+
+    // Функция для показа уведомлений
+    function showAlert(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Вставляем перед кнопкой отправки
+        submitOrderBtn.parentNode.insertBefore(alertDiv, submitOrderBtn);
+        
+        // Автоматически скрываем через 5 секунд
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Функция для обновления счетчика корзины
+    function updateCartCounter() {
+        const cart = loadCart();
+        const totalItems = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+        const cartCounter = document.getElementById('cart-counter');
+        if (cartCounter) {
+            cartCounter.textContent = totalItems;
+            cartCounter.style.display = totalItems > 0 ? 'inline' : 'none';
+        }
+    }
+
+    // Инициализация
+    renderOrderItems();
+    updateCartCounter();
+});
+</script>
+
+<style>
+.sticky-top {
+    z-index: 1020;
+}
+
+.order-item {
+    transition: background-color 0.2s;
+}
+
+.order-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

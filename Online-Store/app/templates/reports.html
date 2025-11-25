@@ -1,0 +1,1438 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if current_user.role == 'admin' %}Отчеты - Админ-панель
+    {% elif current_user.role == 'manager' %}Аналитика - Панель менеджера
+    {% elif current_user.role == 'seller' %}Статистика - Панель продавца
+    {% else %}Отчеты - TechTown{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок в зависимости от роли -->
+    <h1 class="mb-4">
+        {% if current_user.role == 'admin' %}
+            <i class="fas fa-chart-bar text-danger"></i> Аналитика и отчеты
+        {% elif current_user.role == 'manager' %}
+            <i class="fas fa-chart-line text-info"></i> Аналитика продаж
+        {% elif current_user.role == 'seller' %}
+            <i class="fas fa-chart-pie text-warning"></i> Статистика товаров
+        {% else %}
+            <i class="fas fa-chart-bar"></i> Аналитика и отчеты
+        {% endif %}
+        
+        {% if current_user.role != 'customer' %}
+        <small class="badge 
+            {% if current_user.role == 'admin' %}bg-danger
+            {% elif current_user.role == 'manager' %}bg-info
+            {% elif current_user.role == 'seller' %}bg-warning text-dark
+            {% else %}bg-secondary{% endif %} ms-2">
+            {% if current_user.role == 'admin' %}полный доступ
+            {% elif current_user.role == 'manager' %}аналитика
+            {% elif current_user.role == 'seller' %}ограниченный
+            {% endif %}
+        </small>
+        {% endif %}
+    </h1>
+
+    <!-- Информационная карточка о правах доступа -->
+    {% if current_user.role != 'admin' %}
+    <div class="alert 
+        {% if current_user.role == 'manager' %}alert-info
+        {% elif current_user.role == 'seller' %}alert-warning
+        {% else %}alert-secondary{% endif %} mb-4">
+        <i class="fas fa-info-circle"></i>
+        <strong>
+            {% if current_user.role == 'manager' %}
+                Доступ к аналитике и отчетам
+            {% elif current_user.role == 'seller' %}
+                Ограниченный доступ к статистике
+            {% else %}
+                Базовый доступ к отчетам
+            {% endif %}
+        </strong>
+        - 
+        {% if current_user.role == 'manager' %}
+            Вы можете просматривать аналитику продаж и генерировать отчеты
+        {% elif current_user.role == 'seller' %}
+            Доступна статистика по товарам и базовые отчеты
+        {% else %}
+            Ограниченный просмотр отчетности
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Периоды и типы отчетов -->
+    <div class="card mb-4 
+        {% if current_user.role == 'admin' %}border-danger
+        {% elif current_user.role == 'manager' %}border-info
+        {% elif current_user.role == 'seller' %}border-warning
+        {% else %}border-primary{% endif %}">
+        
+        <div class="card-header 
+            {% if current_user.role == 'admin' %}bg-danger text-white
+            {% elif current_user.role == 'manager' %}bg-info text-white
+            {% elif current_user.role == 'seller' %}bg-warning
+            {% else %}bg-primary text-white{% endif %}">
+            
+            <h5 class="mb-0">
+                <i class="fas fa-sliders-h"></i> 
+                {% if current_user.role == 'manager' %}Параметры аналитики
+                {% else %}Периоды и типы отчетов{% endif %}
+            </h5>
+        </div>
+        
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">
+                        <i class="fas fa-calendar"></i> Период отчетов
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <a href="/reports/?period=1&report_type={{ current_report_type }}&custom_report={{ current_custom_report }}" 
+                           class="btn {% if current_period == 1 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            За 1 день
+                        </a>
+                        <a href="/reports/?period=7&report_type={{ current_report_type }}&custom_report={{ current_custom_report }}" 
+                           class="btn {% if current_period == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            За 7 дней
+                        </a>
+                        <a href="/reports/?period=30&report_type={{ current_report_type }}&custom_report={{ current_custom_report }}" 
+                           class="btn {% if current_period == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            За 30 дней
+                        </a>
+                        {% if current_user.role in ['admin', 'manager'] %}
+                        <a href="/reports/?period=90&report_type={{ current_report_type }}&custom_report={{ current_custom_report }}" 
+                           class="btn {% if current_period == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            За 90 дней
+                        </a>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        {% if current_period == 1 %}
+                            Данные за последние 24 часа
+                        {% elif current_period == 7 %}
+                            Данные за последние 7 дней
+                        {% elif current_period == 30 %}
+                            Данные за последние 30 дней
+                        {% else %}
+                            Данные за последние 90 дней
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-line"></i> Тип отчета
+                            </h5>
+                            <div class="btn-group-vertical w-100" role="group">
+                                {% if current_user.role in ['admin', 'manager'] %}
+                                <a href="/reports/?period={{ current_period }}&report_type=all" 
+                                   class="btn {% if current_report_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %} text-start">
+                                    📊 Полный отчет
+                                </a>
+                                {% endif %}
+                                
+                                <a href="/reports/?period={{ current_period }}&report_type=top_products" 
+                                   class="btn {% if current_report_type == 'top_products' %}btn-primary{% else %}btn-outline-primary{% endif %} text-start">
+                                    🏆 Топ товаров
+                                </a>
+                                
+                                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                                <a href="/reports/?period={{ current_period }}&report_type=categories" 
+                                   class="btn {% if current_report_type == 'categories' %}btn-primary{% else %}btn-outline-primary{% endif %} text-start">
+                                    📁 По категориям
+                                </a>
+                                {% endif %}
+
+                                <!-- НОВОЕ: Кнопка для отчетов по отзывам -->
+                                {% if current_user.role in ['admin', 'manager'] %}
+                                <a href="/reports/?period={{ current_period }}&report_type=reviews" 
+                                   class="btn {% if current_report_type == 'reviews' %}btn-primary{% else %}btn-outline-primary{% endif %} text-start">
+                                    ⭐ Анализ отзывов
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.role in ['admin', 'manager'] %}
+                                <a href="/reports/?period={{ current_period }}&report_type=custom&custom_report={% if current_custom_report %}{{ current_custom_report }}{% else %}мой отчет{% endif %}" 
+                                   class="btn {% if current_report_type.startswith('custom') %}btn-primary{% else %}btn-outline-primary{% endif %} text-start">
+                                    ✏️ Пользовательский
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="card-title">
+                                <i class="fas fa-download"></i> Экспорт отчетов
+                            </h5>
+                            <div class="d-grid gap-2">
+                                {% if current_user.role in ['admin', 'manager'] %}
+                                <a href="/reports/export/?period={{ current_period }}&report_type=all" 
+                                   class="btn {% if current_report_type == 'all' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    📥 Полный CSV
+                                </a>
+                                {% endif %}
+                                
+                                <a href="/reports/export/?period={{ current_period }}&report_type=top_products" 
+                                   class="btn {% if current_report_type == 'top_products' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    📥 Топ товаров
+                                </a>
+                                
+                                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                                <a href="/reports/export/?period={{ current_period }}&report_type=categories" 
+                                   class="btn {% if current_report_type == 'categories' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    📥 По категориям
+                                </a>
+                                {% endif %}
+
+                                <!-- НОВОЕ: Кнопка для экспорта отчетов по отзывам -->
+                                {% if current_user.role in ['admin', 'manager'] %}
+                                <a href="/reports/export/?period={{ current_period }}&report_type=reviews" 
+                                   class="btn {% if current_report_type == 'reviews' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    📥 Отзывы CSV
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.role in ['admin', 'manager'] and current_report_type.startswith('custom') and current_custom_report %}
+                                <a href="/reports/export/?period={{ current_period }}&report_type=custom&custom_report={{ current_custom_report }}" 
+                                   class="btn btn-success">
+                                    📥 Пользовательский
+                                </a>
+                                {% elif current_user.role in ['admin', 'manager'] %}
+                                <button class="btn btn-outline-secondary" disabled>
+                                    📥 Пользовательский
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Пользовательский ввод (только для админов и менеджеров) -->
+            {% if current_user.role in ['admin', 'manager'] and current_report_type.startswith('custom') %}
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <form method="get" class="d-flex gap-2">
+                        <input type="hidden" name="period" value="{{ current_period }}">
+                        <input type="hidden" name="report_type" value="custom">
+                        <div class="flex-grow-1">
+                            <input type="text" 
+                                   name="custom_report" 
+                                   class="form-control" 
+                                   placeholder="Введите тип отчета (например: 'топ продаж', 'анализ категорий', 'общая статистика', 'отзывы покупателей')"
+                                   value="{{ current_custom_report }}"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn 
+                            {% if current_user.role == 'admin' %}btn-danger
+                            {% elif current_user.role == 'manager' %}btn-info
+                            {% else %}btn-primary{% endif %}">
+                            Сгенерировать отчет
+                        </button>
+                    </form>
+                    <small class="text-muted">
+                        Введите описание отчета. Система автоматически определит тип данных для отображения.
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Отображение пользовательского отчета (только для админов и менеджеров) -->
+    {% if current_user.role in ['admin', 'manager'] and current_report_type.startswith('custom') and current_custom_report %}
+    <div class="card mb-4">
+        <div class="card-header 
+            {% if current_user.role == 'admin' %}bg-danger text-white
+            {% else %}bg-info text-white{% endif %}">
+            
+            <h5 class="mb-0">
+                <i class="fas fa-file-alt"></i> 
+                Пользовательский отчет: "{{ current_custom_report }}"
+                <span class="badge bg-light text-dark ms-2">за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if "топ" in current_custom_report.lower() or "top" in current_custom_report.lower() or "продаж" in current_custom_report.lower() %}
+            <!-- Показать топ товаров -->
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Товар</th>
+                            <th>Категория</th>
+                            <th>Цена</th>
+                            <th>Продано</th>
+                            <th>Выручка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>iPhone 15 Pro</strong></td>
+                            <td>Смартфоны</td>
+                            <td>99,990 ₽</td>
+                            <td><span class="badge bg-primary">
+                                {% if current_period == 1 %}1
+                                {% elif current_period == 7 %}7
+                                {% elif current_period == 30 %}18
+                                {% else %}54{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}99,990 ₽
+                                {% elif current_period == 7 %}699,930 ₽
+                                {% elif current_period == 30 %}1,799,820 ₽
+                                {% else %}5,399,460 ₽{% endif %}
+                            </strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>MacBook Air M3</strong></td>
+                            <td>Ноутбуки</td>
+                            <td>129,990 ₽</td>
+                            <td><span class="badge bg-primary">
+                                {% if current_period == 1 %}0
+                                {% elif current_period == 7 %}5
+                                {% elif current_period == 30 %}15
+                                {% else %}45{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}0 ₽
+                                {% elif current_period == 7 %}649,950 ₽
+                                {% elif current_period == 30 %}1,949,850 ₽
+                                {% else %}5,849,550 ₽{% endif %}
+                            </strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Samsung Galaxy S24</strong></td>
+                            <td>Смартфоны</td>
+                            <td>79,990 ₽</td>
+                            <td><span class="badge bg-primary">
+                                {% if current_period == 1 %}1
+                                {% elif current_period == 7 %}4
+                                {% elif current_period == 30 %}12
+                                {% else %}36{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}79,990 ₽
+                                {% elif current_period == 7 %}319,960 ₽
+                                {% elif current_period == 30 %}959,880 ₽
+                                {% else %}2,879,640 ₽{% endif %}
+                            </strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Наушники Logitech</strong></td>
+                            <td>Периферия</td>
+                            <td>5,900 ₽</td>
+                            <td><span class="badge bg-primary">
+                                {% if current_period == 1 %}3
+                                {% elif current_period == 7 %}10
+                                {% elif current_period == 30 %}25
+                                {% else %}75{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}17,700 ₽
+                                {% elif current_period == 7 %}59,000 ₽
+                                {% elif current_period == 30 %}147,500 ₽
+                                {% else %}442,500 ₽{% endif %}
+                            </strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% elif "катего" in current_custom_report.lower() or "categor" in current_custom_report.lower() or "групп" in current_custom_report.lower() %}
+            <!-- Показать категории -->
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Категория</th>
+                            <th>Товаров</th>
+                            <th>Продано</th>
+                            <th>Выручка</th>
+                            <th>Доля</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Смартфоны</strong></td>
+                            <td>3</td>
+                            <td><span class="badge bg-success">
+                                {% if current_period == 1 %}2
+                                {% elif current_period == 7 %}11
+                                {% elif current_period == 30 %}30
+                                {% else %}90{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}179,980 ₽
+                                {% elif current_period == 7 %}1,019,890 ₽
+                                {% elif current_period == 30 %}2,759,700 ₽
+                                {% else %}8,279,100 ₽{% endif %}
+                            </strong></td>
+                            <td><span class="badge bg-info">
+                                {% if current_period == 1 %}58.2%
+                                {% elif current_period == 7 %}58.5%
+                                {% elif current_period == 30 %}58.3%
+                                {% else %}58.4%{% endif %}
+                            </span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ноутбуки</strong></td>
+                            <td>1</td>
+                            <td><span class="badge bg-success">
+                                {% if current_period == 1 %}0
+                                {% elif current_period == 7 %}5
+                                {% elif current_period == 30 %}15
+                                {% else %}45{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}0 ₽
+                                {% elif current_period == 7 %}649,950 ₽
+                                {% elif current_period == 30 %}1,949,850 ₽
+                                {% else %}5,849,550 ₽{% endif %}
+                            </strong></td>
+                            <td><span class="badge bg-info">
+                                {% if current_period == 1 %}0%
+                                {% elif current_period == 7 %}37.3%
+                                {% elif current_period == 30 %}37.2%
+                                {% else %}37.3%{% endif %}
+                            </span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Умные технологии</strong></td>
+                            <td>1</td>
+                            <td><span class="badge bg-success">
+                                {% if current_period == 1 %}2
+                                {% elif current_period == 7 %}7
+                                {% elif current_period == 30 %}19
+                                {% else %}57{% endif %} шт.
+                            </span></td>
+                            <td><strong>
+                                {% if current_period == 1 %}39,800 ₽
+                                {% elif current_period == 7 %}139,300 ₽
+                                {% elif current_period == 30 %}378,100 ₽
+                                {% else %}1,134,300 ₽{% endif %}
+                            </strong></td>
+                            <td><span class="badge bg-info">
+                                {% if current_period == 1 %}12.9%
+                                {% elif current_period == 7 %}8.0%
+                                {% elif current_period == 30 %}7.2%
+                                {% else %}7.1%{% endif %}
+                            </span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% elif "отзыв" in current_custom_report.lower() or "review" in current_custom_report.lower() %}
+            <!-- НОВОЕ: Показать отчет по отзывам -->
+            {% if reviews_stats %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center bg-primary text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.total_reviews }}</h3>
+                            <p class="card-text">Всего отзывов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.approved_reviews }}</h3>
+                            <p class="card-text">Одобрено</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.pending_reviews }}</h3>
+                            <p class="card-text">На модерации</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.avg_rating }}</h3>
+                            <p class="card-text">Средний рейтинг</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Распределение рейтингов -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-star"></i> Распределение рейтингов</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for rating in range(5, 0, -1) %}
+                            <div class="row align-items-center mb-2">
+                                <div class="col-2">
+                                    <span class="text-warning">
+                                        {% for i in range(rating) %}★{% endfor %}
+                                        {% for i in range(5-rating) %}☆{% endfor %}
+                                    </span>
+                                </div>
+                                <div class="col-8">
+                                    <div class="progress" style="height: 20px;">
+                                        {% set count = reviews_stats.rating_distribution.get(rating, 0) %}
+                                        {% set total = reviews_stats.approved_reviews %}
+                                        {% set percentage = (count / total * 100) if total > 0 else 0 %}
+                                        <div class="progress-bar bg-warning" style="width: {{ percentage }}%"></div>
+                                    </div>
+                                </div>
+                                <div class="col-2 text-end">
+                                    <small class="text-muted">{{ count }} ({{ "%.1f"|format(percentage) }}%)</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Топ товаров по отзывам -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-trophy"></i> Топ товаров по отзывам</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Товар</th>
+                                            <th>Отзывов</th>
+                                            <th>Рейтинг</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in reviews_stats.top_products_reviews %}
+                                        <tr>
+                                            <td>{{ product.name }}</td>
+                                            <td><span class="badge bg-primary">{{ product.review_count }}</span></td>
+                                            <td>
+                                                <span class="text-warning">
+                                                    {% for i in range(product.avg_rating|int) %}★{% endfor %}
+                                                    {% for i in range(5 - (product.avg_rating|int)) %}☆{% endfor %}
+                                                </span>
+                                                <small class="text-muted">({{ "%.1f"|format(product.avg_rating) }})</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <!-- Показать общую статистику -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center bg-primary text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                {% if current_period == 1 %}
+                                    309,480 ₽
+                                {% elif current_period == 7 %}
+                                    1,742,140 ₽
+                                {% elif current_period == 30 %}
+                                    4,734,550 ₽
+                                {% else %}
+                                    14,203,650 ₽
+                                {% endif %}
+                            </h3>
+                            <p class="card-text">Общая выручка</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                {% if current_period == 1 %}
+                                    3
+                                {% elif current_period == 7 %}
+                                    21
+                                {% elif current_period == 30 %}
+                                    64
+                                {% else %}
+                                    192
+                                {% endif %}
+                            </h3>
+                            <p class="card-text">Всего заказов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                {% if current_period == 1 %}
+                                    8
+                                {% elif current_period == 7 %}
+                                    56
+                                {% elif current_period == 30 %}
+                                    167
+                                {% else %}
+                                    501
+                                {% endif %}
+                            </h3>
+                            <p class="card-text">Товаров продано</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                {% if current_period == 1 %}
+                                    103,160 ₽
+                                {% elif current_period == 7 %}
+                                    82,959 ₽
+                                {% elif current_period == 30 %}
+                                    73,977 ₽
+                                {% else %}
+                                    73,977 ₽
+                                {% endif %}
+                            </h3>
+                            <p class="card-text">Средний чек</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="alert alert-info mt-3">
+                <strong>Информация:</strong> Это пользовательский отчет. Система автоматически определила тип данных на основе вашего запроса "{{ current_custom_report }}".
+            </div>
+        </div>
+    </div>
+
+    {% elif current_user.role in ['admin', 'manager'] and current_report_type.startswith('custom') and not current_custom_report %}
+    <!-- Сообщение о необходимости ввода пользовательского отчета -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Введите тип отчета</h5>
+        </div>
+        <div class="card-body text-center">
+            <p class="mb-3">Пожалуйста, введите тип отчета в поле выше, чтобы сгенерировать пользовательский отчет.</p>
+            <p class="text-muted">Примеры: "топ продаж", "анализ категорий", "общая статистика", "отзывы покупателей"</p>
+        </div>
+    </div>
+
+    <!-- НОВОЕ: Отчет по отзывам -->
+    {% elif current_user.role in ['admin', 'manager'] and current_report_type == 'reviews' %}
+    <div class="card mb-4">
+        <div class="card-header 
+            {% if current_user.role == 'admin' %}bg-danger text-white
+            {% else %}bg-info text-white{% endif %}">
+            
+            <h5 class="mb-0">
+                <i class="fas fa-comments"></i> 
+                Анализ отзывов покупателей
+                <span class="badge bg-light text-dark ms-2">за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if reviews_stats %}
+            <!-- Общая статистика по отзывам -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center 
+                        {% if current_user.role == 'admin' %}bg-danger text-white
+                        {% else %}bg-info text-white{% endif %}">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.total_reviews }}</h3>
+                            <p class="card-text">Всего отзывов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.approved_reviews }}</h3>
+                            <p class="card-text">Одобрено</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.pending_reviews }}</h3>
+                            <p class="card-text">На модерации</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-primary text-white">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ reviews_stats.avg_rating }}</h3>
+                            <p class="card-text">Средний рейтинг</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Распределение рейтингов -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header 
+                            {% if current_user.role == 'admin' %}bg-danger text-white
+                            {% else %}bg-info text-white{% endif %}">
+                            <h5 class="mb-0"><i class="fas fa-star"></i> Распределение рейтингов</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for rating in range(5, 0, -1) %}
+                            <div class="row align-items-center mb-3">
+                                <div class="col-2">
+                                    <span class="text-warning fs-5">
+                                        {% for i in range(rating) %}★{% endfor %}
+                                        {% for i in range(5-rating) %}☆{% endfor %}
+                                    </span>
+                                </div>
+                                <div class="col-7">
+                                    <div class="progress" style="height: 25px;">
+                                        {% set count = reviews_stats.rating_distribution.get(rating, 0) %}
+                                        {% set total = reviews_stats.approved_reviews %}
+                                        {% set percentage = (count / total * 100) if total > 0 else 0 %}
+                                        <div class="progress-bar 
+                                            {% if rating >= 4 %}bg-success
+                                            {% elif rating == 3 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                            style="width: {{ percentage }}%">
+                                            <span class="fw-bold">{{ "%.1f"|format(percentage) }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3 text-end">
+                                    <span class="fw-bold">{{ count }} отзывов</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Топ товаров по отзывам -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-trophy"></i> Топ товаров по отзывам</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Товар</th>
+                                            <th>Отзывов</th>
+                                            <th>Рейтинг</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in reviews_stats.top_products_reviews %}
+                                        <tr>
+                                            <td><strong>{{ product.name }}</strong></td>
+                                            <td>
+                                                <span class="badge bg-primary fs-6">{{ product.review_count }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-warning fs-6">
+                                                    {% for i in range(product.avg_rating|int) %}★{% endfor %}
+                                                    {% for i in range(5 - (product.avg_rating|int)) %}☆{% endfor %}
+                                                </span>
+                                                <small class="text-muted">({{ "%.2f"|format(product.avg_rating) }})</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Топ пользователей по отзывам -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-users"></i> Топ покупателей по отзывам</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th>Покупатель</th>
+                                            <th>Email</th>
+                                            <th>Отзывов</th>
+                                            <th>Средний рейтинг</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for reviewer in reviews_stats.top_reviewers %}
+                                        <tr>
+                                            <td><strong>{{ reviewer.name }}</strong></td>
+                                            <td>{{ reviewer.email }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ reviewer.review_count }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-warning">
+                                                    {% for i in range(reviewer.avg_rating|int) %}★{% endfor %}
+                                                    {% for i in range(5 - (reviewer.avg_rating|int)) %}☆{% endfor %}
+                                                </span>
+                                                <small class="text-muted">({{ "%.2f"|format(reviewer.avg_rating) }})</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="alert alert-info text-center">
+                <h5><i class="fas fa-comment-slash"></i> Данные по отзывам отсутствуют</h5>
+                <p>За выбранный период отзывы не найдены.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Стандартные отчеты -->
+    
+    <!-- Общая статистика - доступна всем ролям кроме customer -->
+    {% if current_user.role != 'customer' %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center 
+                {% if current_user.role == 'admin' %}bg-danger text-white
+                {% elif current_user.role == 'manager' %}bg-info text-white
+                {% elif current_user.role == 'seller' %}bg-warning text-dark
+                {% else %}bg-primary text-white{% endif %}">
+                
+                <div class="card-body">
+                    <h3 class="card-title">
+                        {% if current_period == 1 %}
+                            309,480 ₽
+                        {% elif current_period == 7 %}
+                            1,742,140 ₽
+                        {% elif current_period == 30 %}
+                            4,734,550 ₽
+                        {% else %}
+                            14,203,650 ₽
+                        {% endif %}
+                    </h3>
+                    <p class="card-text">Общая выручка</p>
+                    <small>за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        {% if current_period == 1 %}
+                            3
+                        {% elif current_period == 7 %}
+                            21
+                        {% elif current_period == 30 %}
+                            64
+                        {% else %}
+                            192
+                        {% endif %}
+                    </h3>
+                    <p class="card-text">Всего заказов</p>
+                    <small>за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        {% if current_period == 1 %}
+                            8
+                        {% elif current_period == 7 %}
+                            56
+                        {% elif current_period == 30 %}
+                            167
+                        {% else %}
+                            501
+                        {% endif %}
+                    </h3>
+                    <p class="card-text">Товаров продано</p>
+                    <small>за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center 
+                {% if current_user.role == 'seller' %}bg-secondary text-white
+                {% else %}bg-warning text-dark{% endif %}">
+                
+                <div class="card-body">
+                    <h3 class="card-title">
+                        {% if current_period == 1 %}
+                            103,160 ₽
+                        {% elif current_period == 7 %}
+                            82,959 ₽
+                        {% elif current_period == 30 %}
+                            73,977 ₽
+                        {% else %}
+                            73,977 ₽
+                        {% endif %}
+                    </h3>
+                    <p class="card-text">Средний чек</p>
+                    <small>за {{ current_period }} день{% if current_period > 1 %}я{% endif %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Контент в зависимости от типа отчета и роли -->
+    <div class="row">
+        <!-- Топ товаров - доступен всем ролям -->
+        {% if current_report_type == 'all' or current_report_type == 'top_products' %}
+        <div class="col-lg-{% if current_user.role == 'seller' %}12{% else %}6{% endif %} mb-4">
+            <div class="card h-100 
+                {% if current_user.role == 'admin' %}border-danger
+                {% elif current_user.role == 'manager' %}border-info
+                {% elif current_user.role == 'seller' %}border-warning
+                {% else %}border-primary{% endif %}">
+                
+                <div class="card-header 
+                    {% if current_user.role == 'admin' %}bg-danger text-white
+                    {% elif current_user.role == 'manager' %}bg-info text-white
+                    {% elif current_user.role == 'seller' %}bg-warning
+                    {% else %}bg-dark text-white{% endif %} 
+                    d-flex justify-content-between align-items-center">
+                    
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> 
+                        {% if current_user.role == 'seller' %}Статистика товаров
+                        {% else %}Топ продаваемых товаров{% endif %}
+                    </h5>
+                    <span class="badge 
+                        {% if current_user.role == 'admin' %}bg-light text-dark
+                        {% elif current_user.role == 'manager' %}bg-light text-dark
+                        {% elif current_user.role == 'seller' %}bg-dark text-white
+                        {% else %}bg-primary{% endif %}">
+                        за {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Товар</th>
+                                    <th>Категория</th>
+                                    <th>Цена</th>
+                                    <th>Продано</th>
+                                    <th>Выручка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>iPhone 15 Pro</strong></td>
+                                    <td>Смартфоны</td>
+                                    <td>99,990 ₽</td>
+                                    <td><span class="badge bg-primary">
+                                        {% if current_period == 1 %}1
+                                        {% elif current_period == 7 %}7
+                                        {% elif current_period == 30 %}18
+                                        {% else %}54{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}99,990 ₽
+                                        {% elif current_period == 7 %}699,930 ₽
+                                        {% elif current_period == 30 %}1,799,820 ₽
+                                        {% else %}5,399,460 ₽{% endif %}
+                                    </strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>MacBook Air M3</strong></td>
+                                    <td>Ноутбуки</td>
+                                    <td>129,990 ₽</td>
+                                    <td><span class="badge bg-primary">
+                                        {% if current_period == 1 %}0
+                                        {% elif current_period == 7 %}5
+                                        {% elif current_period == 30 %}15
+                                        {% else %}45{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}0 ₽
+                                        {% elif current_period == 7 %}649,950 ₽
+                                        {% elif current_period == 30 %}1,949,850 ₽
+                                        {% else %}5,849,550 ₽{% endif %}
+                                    </strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Samsung Galaxy S24</strong></td>
+                                    <td>Смартфоны</td>
+                                    <td>79,990 ₽</td>
+                                    <td><span class="badge bg-primary">
+                                        {% if current_period == 1 %}1
+                                        {% elif current_period == 7 %}4
+                                        {% elif current_period == 30 %}12
+                                        {% else %}36{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}79,990 ₽
+                                        {% elif current_period == 7 %}319,960 ₽
+                                        {% elif current_period == 30 %}959,880 ₽
+                                        {% else %}2,879,640 ₽{% endif %}
+                                    </strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Наушники Logitech</strong></td>
+                                    <td>Периферия</td>
+                                    <td>5,900 ₽</td>
+                                    <td><span class="badge bg-primary">
+                                        {% if current_period == 1 %}3
+                                        {% elif current_period == 7 %}10
+                                        {% elif current_period == 30 %}25
+                                        {% else %}75{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}17,700 ₽
+                                        {% elif current_period == 7 %}59,000 ₽
+                                        {% elif current_period == 30 %}147,500 ₽
+                                        {% else %}442,500 ₽{% endif %}
+                                    </strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Apple Watch SE</strong></td>
+                                    <td>Умные технологии</td>
+                                    <td>19,900 ₽</td>
+                                    <td><span class="badge bg-primary">
+                                        {% if current_period == 1 %}2
+                                        {% elif current_period == 7 %}7
+                                        {% elif current_period == 30 %}19
+                                        {% else %}57{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}39,800 ₽
+                                        {% elif current_period == 7 %}139,300 ₽
+                                        {% elif current_period == 30 %}378,100 ₽
+                                        {% else %}1,134,300 ₽{% endif %}
+                                    </strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Статистика по категориям - для админов, менеджеров и продавцов -->
+        {% if current_user.role in ['admin', 'manager', 'seller'] and (current_report_type == 'all' or current_report_type == 'categories') %}
+        <div class="col-lg-{% if current_user.role == 'seller' %}12{% else %}6{% endif %} mb-4">
+            <div class="card h-100 
+                {% if current_user.role == 'admin' %}border-danger
+                {% elif current_user.role == 'manager' %}border-info
+                {% elif current_user.role == 'seller' %}border-warning
+                {% else %}border-primary{% endif %}">
+                
+                <div class="card-header 
+                    {% if current_user.role == 'admin' %}bg-danger text-white
+                    {% elif current_user.role == 'manager' %}bg-info text-white
+                    {% elif current_user.role == 'seller' %}bg-warning
+                    {% else %}bg-dark text-white{% endif %} 
+                    d-flex justify-content-between align-items-center">
+                    
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags"></i> 
+                        {% if current_user.role == 'seller' %}Категории товаров
+                        {% else %}Статистика по категориям{% endif %}
+                    </h5>
+                    <span class="badge 
+                        {% if current_user.role == 'admin' %}bg-light text-dark
+                        {% elif current_user.role == 'manager' %}bg-light text-dark
+                        {% elif current_user.role == 'seller' %}bg-dark text-white
+                        {% else %}bg-primary{% endif %}">
+                        за {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Категория</th>
+                                    <th>Товаров</th>
+                                    <th>Продано</th>
+                                    <th>Выручка</th>
+                                    <th>Доля</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Смартфоны</strong></td>
+                                    <td>3</td>
+                                    <td><span class="badge bg-success">
+                                        {% if current_period == 1 %}2
+                                        {% elif current_period == 7 %}11
+                                        {% elif current_period == 30 %}30
+                                        {% else %}90{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}179,980 ₽
+                                        {% elif current_period == 7 %}1,019,890 ₽
+                                        {% elif current_period == 30 %}2,759,700 ₽
+                                        {% else %}8,279,100 ₽{% endif %}
+                                    </strong></td>
+                                    <td><span class="badge bg-info">
+                                        {% if current_period == 1 %}58.2%
+                                        {% elif current_period == 7 %}58.5%
+                                        {% elif current_period == 30 %}58.3%
+                                        {% else %}58.4%{% endif %}
+                                    </span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ноутбуки</strong></td>
+                                    <td>1</td>
+                                    <td><span class="badge bg-success">
+                                        {% if current_period == 1 %}0
+                                        {% elif current_period == 7 %}5
+                                        {% elif current_period == 30 %}15
+                                        {% else %}45{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}0 ₽
+                                        {% elif current_period == 7 %}649,950 ₽
+                                        {% elif current_period == 30 %}1,949,850 ₽
+                                        {% else %}5,849,550 ₽{% endif %}
+                                    </strong></td>
+                                    <td><span class="badge bg-info">
+                                        {% if current_period == 1 %}0%
+                                        {% elif current_period == 7 %}37.3%
+                                        {% elif current_period == 30 %}37.2%
+                                        {% else %}37.3%{% endif %}
+                                    </span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Умные технологии</strong></td>
+                                    <td>1</td>
+                                    <td><span class="badge bg-success">
+                                        {% if current_period == 1 %}2
+                                        {% elif current_period == 7 %}7
+                                        {% elif current_period == 30 %}19
+                                        {% else %}57{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}39,800 ₽
+                                        {% elif current_period == 7 %}139,300 ₽
+                                        {% elif current_period == 30 %}378,100 ₽
+                                        {% else %}1,134,300 ₽{% endif %}
+                                    </strong></td>
+                                    <td><span class="badge bg-info">
+                                        {% if current_period == 1 %}12.9%
+                                        {% elif current_period == 7 %}8.0%
+                                        {% elif current_period == 30 %}7.2%
+                                        {% else %}7.1%{% endif %}
+                                    </span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Периферия</strong></td>
+                                    <td>2</td>
+                                    <td><span class="badge bg-success">
+                                        {% if current_period == 1 %}3
+                                        {% elif current_period == 7 %}10
+                                        {% elif current_period == 30 %}25
+                                        {% else %}75{% endif %} шт.
+                                    </span></td>
+                                    <td><strong>
+                                        {% if current_period == 1 %}17,700 ₽
+                                        {% elif current_period == 7 %}59,000 ₽
+                                        {% elif current_period == 30 %}147,500 ₽
+                                        {% else %}442,500 ₽{% endif %}
+                                    </strong></td>
+                                    <td><span class="badge bg-info">
+                                        {% if current_period == 1 %}5.7%
+                                        {% elif current_period == 7 %}3.4%
+                                        {% elif current_period == 30 %}2.8%
+                                        {% else %}2.8%{% endif %}
+                                    </span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Динамика продаж и сравнение периодов - только для админов и менеджеров -->
+    {% if current_user.role in ['admin', 'manager'] and current_report_type == 'all' %}
+    <!-- Динамика продаж -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card 
+                {% if current_user.role == 'admin' %}border-danger
+                {% else %}border-info{% endif %}">
+                
+                <div class="card-header 
+                    {% if current_user.role == 'admin' %}bg-danger text-white
+                    {% else %}bg-info text-white{% endif %} 
+                    d-flex justify-content-between align-items-center">
+                    
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> 
+                        {% if current_period <= 7 %}
+                            Детальная статистика по дням
+                        {% else %}
+                            Динамика продаж по неделям
+                        {% endif %}
+                    </h5>
+                    <span class="badge bg-light text-dark">
+                        за {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>{% if current_period <= 7 %}Дата{% else %}Период{% endif %}</th>
+                                    <th>Количество заказов</th>
+                                    <th>Сумма заказов</th>
+                                    <th>Средний чек</th>
+                                    <th>Товаров продано</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if current_period == 1 %}
+                                <tr>
+                                    <td><strong>Сегодня</strong></td>
+                                    <td>3</td>
+                                    <td>309,480 ₽</td>
+                                    <td>103,160 ₽</td>
+                                    <td>8</td>
+                                </tr>
+                                {% elif current_period == 7 %}
+                                <tr>
+                                    <td><strong>Понедельник</strong></td>
+                                    <td>4</td>
+                                    <td>418,760 ₽</td>
+                                    <td>104,690 ₽</td>
+                                    <td>11</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Вторник</strong></td>
+                                    <td>3</td>
+                                    <td>314,220 ₽</td>
+                                    <td>104,740 ₽</td>
+                                    <td>8</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Среда</strong></td>
+                                    <td>2</td>
+                                    <td>209,890 ₽</td>
+                                    <td>104,945 ₽</td>
+                                    <td>6</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Четверг</strong></td>
+                                    <td>5</td>
+                                    <td>521,340 ₽</td>
+                                    <td>104,268 ₽</td>
+                                    <td>12</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Пятница</strong></td>
+                                    <td>4</td>
+                                    <td>416,580 ₽</td>
+                                    <td>104,145 ₽</td>
+                                    <td>9</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Суббота</strong></td>
+                                    <td>2</td>
+                                    <td>205,260 ₽</td>
+                                    <td>102,630 ₽</td>
+                                    <td>5</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Воскресенье</strong></td>
+                                    <td>1</td>
+                                    <td>101,100 ₽</td>
+                                    <td>101,100 ₽</td>
+                                    <td>5</td>
+                                </tr>
+                                {% elif current_period == 30 %}
+                                <tr>
+                                    <td><strong>1-7 января</strong></td>
+                                    <td>12</td>
+                                    <td>1,245,450 ₽</td>
+                                    <td>103,788 ₽</td>
+                                    <td>28</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>8-14 января</strong></td>
+                                    <td>8</td>
+                                    <td>798,760 ₽</td>
+                                    <td>99,845 ₽</td>
+                                    <td>19</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>15-21 января</strong></td>
+                                    <td>9</td>
+                                    <td>928,940 ₽</td>
+                                    <td>103,216 ₽</td>
+                                    <td>24</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>22-28 января</strong></td>
+                                    <td>5</td>
+                                    <td>507,350 ₽</td>
+                                    <td>101,470 ₽</td>
+                                    <td>18</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td><strong>Октябрь (1-4 недели)</strong></td>
+                                    <td>38</td>
+                                    <td>3,945,200 ₽</td>
+                                    <td>103,821 ₽</td>
+                                    <td>92</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ноябрь (1-4 недели)</strong></td>
+                                    <td>35</td>
+                                    <td>3,572,150 ₽</td>
+                                    <td>102,061 ₽</td>
+                                    <td>85</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Декабрь (1-4 недели)</strong></td>
+                                    <td>29</td>
+                                    <td>2,925,150 ₽</td>
+                                    <td>100,867 ₽</td>
+                                    <td>90</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сравнение периодов -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card 
+                {% if current_user.role == 'admin' %}border-warning
+                {% else %}border-success{% endif %}">
+                
+                <div class="card-header 
+                    {% if current_user.role == 'admin' %}bg-warning text-dark
+                    {% else %}bg-success text-white{% endif %}">
+                    
+                    <h5 class="mb-0">
+                        <i class="fas fa-balance-scale"></i> 
+                        {% if current_user.role == 'admin' %}Сравнительная аналитика
+                        {% else %}Сравнение с предыдущим периодом{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h5>Выручка</h5>
+                            <h4 class="text-success">
+                                {% if current_period == 1 %}+25.3%
+                                {% elif current_period == 7 %}+18.7%
+                                {% elif current_period == 30 %}+15.3%
+                                {% else %}+12.1%{% endif %}
+                            </h4>
+                            <small class="text-muted">
+                                vs предыдущие {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Заказы</h5>
+                            <h4 class="text-success">
+                                {% if current_period == 1 %}+20.0%
+                                {% elif current_period == 7 %}+16.7%
+                                {% elif current_period == 30 %}+12.7%
+                                {% else %}+9.8%{% endif %}
+                            </h4>
+                            <small class="text-muted">
+                                vs предыдущие {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Товары</h5>
+                            <h4 class="text-success">
+                                {% if current_period == 1 %}+33.3%
+                                {% elif current_period == 7 %}+21.7%
+                                {% elif current_period == 30 %}+18.2%
+                                {% else %}+15.6%{% endif %}
+                            </h4>
+                            <small class="text-muted">
+                                vs предыдущие {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Средний чек</h5>
+                            <h4 class="text-success">
+                                {% if current_period == 1 %}+4.4%
+                                {% elif current_period == 7 %}+1.7%
+                                {% elif current_period == 30 %}+2.3%
+                                {% else %}+2.1%{% endif %}
+                            </h4>
+                            <small class="text-muted">
+                                vs предыдущие {{ current_period }} день{% if current_period > 1 %}я{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Сообщение для покупателей -->
+    {% if current_user.role == 'customer' %}
+    <div class="card border-secondary">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация</h5>
+        </div>
+        <div class="card-body text-center">
+            <p class="mb-3">У вас нет доступа к просмотру отчетов.</p>
+            <p class="text-muted">Для доступа к аналитике обратитесь к администратору.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - TechTown{% endblock %}
+
+{% block content %}
+<!-- Герой секция -->
+<div class="hero-section bg-primary text-white py-5 rounded mb-5">
+    <div class="row align-items-center">
+        <div class="col-md-6 text-center">
+            <h1 class="display-4 fw-bold text-center">Добро пожаловать в TechTown!</h1>
+            <p class="lead text-center">Самые дешевые товары, только на TechTown!</p>
+            <a href="/products/" class="btn btn-light btn-lg">Начать покупки</a>
+        </div>
+        <div class="col-md-6 text-center">
+            <i class="fas fa-shopping-bag fa-10x opacity-50"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-5">
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-boxes fa-3x mb-3"></i>
+                <h3>{{ products_count|default('1000+') }}</h3>
+                <p>Товаров в каталоге</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h3>{{ customers_count|default('5000+') }}</h3>
+                <p>Довольных клиентов</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-shipping-fast fa-3x mb-3"></i>
+                <h3>{{ orders_count|default('10000+') }}</h3>
+                <p>Выполненных заказов</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-award fa-3x mb-3"></i>
+                <h3>5+</h3>
+                <p>Лет на рынке</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Категории -->
+<div class="row mb-5 ">
+    <div class="col-12 ">
+        <h2 class="text-center mb-4">Категории товаров</h2>
+        <div class="row justify-content-center">
+            {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="card category-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-{{ 'mobile-alt' if 'Смартфоны' in category.name else 'laptop' if 'Ноутбуки' in category.name else 'mouse' if 'Периферия' in category.name else 'brain'}} fa-4x text-outline-primary mb-3"></i>
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text">{{ category.description or 'Описание категории' }}</p>
+                        <a href="/products/?category_id={{ category.id }}" class="btn btn-outline-light">
+                            Смотреть товары
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-warning text-center">
+                    <h4>Категории не найдены</h4>
+                    <p>В базе данных нет категорий товаров. Пожалуйста, добавьте категории через админку.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Преимущества -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Почему выбирают нас?</h2>
+        <div class="row">
+            <div class="col-md-4 text-center mb-4">
+                <div class="card h-100 border-0">
+                    <div class="card-body">
+                        <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
+                        <h5>Быстрая доставка</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="card h-100 border-0">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                        <h5>Гарантия качества</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="card h-100 border-0">
+                    <div class="card-body">
+                        <i class="fas fa-headset fa-3x text-info mb-3"></i>
+                        <h5>Поддержка 24/7</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Отзывы покупателей -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                <i class="fas fa-comments me-2"></i>Отзывы покупателей
+            {% else %}
+                Что говорят наши клиенты
+            {% endif %}
+            
+            <span class="badge 
+                {% if current_user.role == 'admin' %}bg-danger
+                {% elif current_user.role == 'manager' %}bg-info
+                {% elif current_user.role == 'seller' %}bg-warning text-dark
+                {% else %}bg-success{% endif %} ms-2">
+                {{ reviews_count }}+ отзывов
+            </span>
+        </h2>
+        
+        {% if recent_reviews %}
+        <div class="row">
+            {% for review in recent_reviews %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 
+                    {% if current_user.role == 'admin' %}border-danger
+                    {% elif current_user.role == 'manager' %}border-info
+                    {% elif current_user.role == 'seller' %}border-warning
+                    {% else %}border-success{% endif %}">
+                    
+                    <div class="card-header 
+                        {% if current_user.role == 'admin' %}bg-danger text-white
+                        {% elif current_user.role == 'manager' %}bg-info text-white
+                        {% elif current_user.role == 'seller' %}bg-warning
+                        {% else %}bg-success text-white{% endif %} 
+                        d-flex justify-content-between align-items-center">
+                        
+                        <div>
+                            <strong>{{ review.customer.name }}</strong>
+                            {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                            <br>
+                            <small>Товар: {{ review.product.name }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="text-warning">
+                            {% for i in range(5) %}
+                                {% if i < review.rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h6 class="card-title">{{ review.title }}</h6>
+                        <p class="card-text">{{ review.comment }}</p>
+                    </div>
+                    
+                    <div class="card-footer text-muted">
+                        <small>
+                            <i class="far fa-clock me-1"></i>
+                            {{ review.created_at.strftime('%d.%m.%Y') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="/reviews/" class="btn 
+                {% if current_user.role == 'admin' %}btn-outline-danger
+                {% elif current_user.role == 'manager' %}btn-outline-info
+                {% elif current_user.role == 'seller' %}btn-outline-warning
+                {% else %}btn-outline-success{% endif %}">
+                
+                <i class="fas fa-comments me-2"></i>
+                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                    Все отзывы
+                {% else %}
+                    Смотреть все отзывы
+                {% endif %}
+            </a>
+        </div>
+        
+        {% else %}
+        <div class="alert 
+            {% if current_user.role == 'admin' %}alert-danger
+            {% elif current_user.role == 'manager' %}alert-info
+            {% elif current_user.role == 'seller' %}alert-warning
+            {% else %}alert-info{% endif %} 
+            text-center">
+            
+            <h5>
+                <i class="fas 
+                    {% if current_user.role in ['admin', 'manager', 'seller'] %}fa-comment-slash
+                    {% else %}fa-comments{% endif %} 
+                    me-2"></i>
+                    
+                {% if current_user.role in ['admin', 'manager', 'seller'] %}
+                    Отзывов пока нет
+                {% else %}
+                    Станьте первым, кто оставит отзыв!
+                {% endif %}
+            </h5>
+            
+            {% if current_user and current_user.role == 'customer' %}
+            <p>Поделитесь своим мнением о наших товарах после покупки.</p>
+            {% elif current_user.role in ['admin', 'manager', 'seller'] %}
+            <p>Пользователи еще не оставили отзывы о товарах.</p>
+            {% else %}
+            <p><a href="/auth/login" class="alert-link">Войдите</a> чтобы оставить отзыв.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

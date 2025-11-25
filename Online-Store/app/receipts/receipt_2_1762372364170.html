@@ -1,0 +1,185 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body { 
+                    font-family: 'Arial', sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                }
+                .receipt-container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    overflow: hidden;
+                }
+                .header { 
+                    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                }
+                .company { 
+                    font-size: 28px; 
+                    font-weight: bold; 
+                    margin-bottom: 10px;
+                }
+                .tagline {
+                    font-size: 16px;
+                    opacity: 0.9;
+                }
+                .content {
+                    padding: 30px;
+                }
+                .details { 
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                }
+                .detail-row {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 8px;
+                }
+                .detail-label {
+                    font-weight: bold;
+                    color: #555;
+                }
+                .items { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 20px 0;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                .items th { 
+                    background: #4e54c8;
+                    color: white;
+                    padding: 15px;
+                    text-align: left;
+                    font-weight: 600;
+                }
+                .items td { 
+                    padding: 12px 15px;
+                    border-bottom: 1px solid #eee;
+                }
+                .items tr:hover {
+                    background: #f8f9fa;
+                }
+                .total { 
+                    font-size: 20px; 
+                    font-weight: bold; 
+                    text-align: right;
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .footer { 
+                    margin-top: 30px; 
+                    font-size: 14px; 
+                    color: #666; 
+                    text-align: center;
+                    padding: 20px;
+                    border-top: 1px solid #eee;
+                }
+                .demo-badge {
+                    background: #ff6b6b;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    margin-left: 10px;
+                }
+                .thank-you {
+                    text-align: center;
+                    font-size: 18px;
+                    color: #4e54c8;
+                    margin: 20px 0;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt-container">
+                <div class="header">
+                    <div class="company">🛍️ TechTown</div>
+                    <div class="tagline">Интернет-магазин электроники</div>
+                </div>
+                
+                <div class="content">
+                    <div class="thank-you">Спасибо за покупку! 💝</div>
+                    
+                    <div class="details">
+                        <div class="detail-row">
+                            <span class="detail-label">Чек №:</span>
+                            <span>2 <span class="demo-badge">ДЕМО</span></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Дата:</span>
+                            <span>05.11.2025 19:52</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Заказ №:</span>
+                            <span>1762372364170</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email:</span>
+                            <span>metrogrt223@mail.ru</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Телефон:</span>
+                            <span>sadasd</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Способ оплаты:</span>
+                            <span>demo_card</span>
+                        </div>
+                    </div>
+                    
+                    <table class="items">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Кол-во</th>
+                                <th>Цена</th>
+                                <th>Сумма</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>iPhone 15 Pro</td>
+                                <td>1 шт.</td>
+                                <td>99990.0 ₽</td>
+                                <td>99990.0 ₽</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                    
+                    <div class="total">
+                        💰 Итого к оплате: 99990.0 ₽
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <strong>Это демо-версия платежной системы</strong><br>
+                    Реальный платеж не проводился<br>
+                    Техподдержка: support@techtown.ru<br>
+                    Чек сформирован автоматически 05.11.2025 23:52
+                </div>
+            </div>
+        </body>
+        </html>
+        
